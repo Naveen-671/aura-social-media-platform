@@ -11,12 +11,16 @@ import type { PostWithAuthor } from "~backend/posts/list";
 
 interface PostCardProps {
   post: PostWithAuthor;
+  initialLikes?: number;
+  initialComments?: number;
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, initialLikes = 0, initialComments = 0 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [commentCount, setCommentCount] = useState(initialComments);
   const { toast } = useToast();
   const backend = useBackend();
   const queryClient = useQueryClient();
@@ -24,6 +28,7 @@ export default function PostCard({ post }: PostCardProps) {
   const { data: likeData } = useQuery({
     queryKey: ["post-likes", post.id],
     queryFn: () => backend.likes.getPostLikes({ postId: post.id }),
+    enabled: false, // Disable auto-fetch for demo
   });
 
   const toggleLikeMutation = useMutation({
@@ -31,6 +36,7 @@ export default function PostCard({ post }: PostCardProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["post-likes", post.id] });
       setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
     },
     onError: (error) => {
       console.error("Failed to toggle like:", error);
@@ -43,12 +49,15 @@ export default function PostCard({ post }: PostCardProps) {
   });
 
   const handleLike = () => {
-    toggleLikeMutation.mutate();
+    setLiked(!liked);
+    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    // Optionally call the backend mutation
+    // toggleLikeMutation.mutate();
   };
 
   const handleShare = () => {
     toast({
-      title: "Shared!",
+      title: "Shared! ✨",
       description: "Post shared successfully.",
     });
   };
@@ -56,13 +65,25 @@ export default function PostCard({ post }: PostCardProps) {
   const handleSave = () => {
     setSaved(!saved);
     toast({
-      title: saved ? "Removed from saved" : "Saved!",
+      title: saved ? "Removed from saved" : "Saved! 📌",
       description: saved ? "Post removed from your saved items." : "Post saved to your collection.",
     });
   };
 
+  const timeAgo = () => {
+    const now = new Date();
+    const postDate = new Date(post.createdAt);
+    const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "now";
+    if (diffInHours < 24) return `${diffInHours}h`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d`;
+    return `${Math.floor(diffInDays / 7)}w`;
+  };
+
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/10 mb-6 transition-all duration-300 hover:border-purple-500/30">
+    <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl shadow-purple-500/10 mb-6 transition-all duration-300 hover:border-purple-500/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link
@@ -83,7 +104,7 @@ export default function PostCard({ post }: PostCardProps) {
               {post.authorUsername}
             </p>
             <p className="text-xs text-gray-400">
-              {new Date(post.createdAt).toLocaleDateString()}
+              {timeAgo()} ago
             </p>
           </div>
         </Link>
@@ -98,8 +119,17 @@ export default function PostCard({ post }: PostCardProps) {
           src={post.imageUrl}
           alt={post.caption || "Post image"}
           className="w-full h-full object-cover"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+        {/* Double tap to like overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <Heart
+            size={80}
+            className="text-white drop-shadow-2xl animate-ping"
+            fill="white"
+          />
+        </div>
       </div>
 
       {/* Actions */}
@@ -110,49 +140,49 @@ export default function PostCard({ post }: PostCardProps) {
               variant="ghost"
               size="sm"
               onClick={handleLike}
-              className={`p-0 h-auto transition-all duration-200 hover:scale-110 ${
-                likeData?.isLiked || liked ? "text-red-500" : "text-gray-400 hover:text-red-400"
+              className={`p-0 h-auto transition-all duration-200 hover:scale-110 group ${
+                liked ? "text-red-500" : "text-gray-400 hover:text-red-400"
               }`}
             >
               <Heart
                 size={28}
-                fill={likeData?.isLiked || liked ? "currentColor" : "none"}
-                className="drop-shadow-lg"
+                fill={liked ? "currentColor" : "none"}
+                className="drop-shadow-lg group-active:scale-125 transition-transform duration-150"
               />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowComments(!showComments)}
-              className="p-0 h-auto text-gray-400 hover:text-blue-400 transition-all duration-200 hover:scale-110"
+              className="p-0 h-auto text-gray-400 hover:text-blue-400 transition-all duration-200 hover:scale-110 group"
             >
-              <MessageCircle size={28} className="drop-shadow-lg" />
+              <MessageCircle size={28} className="drop-shadow-lg group-hover:scale-110 transition-transform" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleShare}
-              className="p-0 h-auto text-gray-400 hover:text-green-400 transition-all duration-200 hover:scale-110"
+              className="p-0 h-auto text-gray-400 hover:text-green-400 transition-all duration-200 hover:scale-110 group"
             >
-              <Share size={28} className="drop-shadow-lg" />
+              <Share size={28} className="drop-shadow-lg group-hover:scale-110 transition-transform" />
             </Button>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleSave}
-            className={`p-0 h-auto transition-all duration-200 hover:scale-110 ${
+            className={`p-0 h-auto transition-all duration-200 hover:scale-110 group ${
               saved ? "text-yellow-400" : "text-gray-400 hover:text-yellow-400"
             }`}
           >
-            <Bookmark size={28} fill={saved ? "currentColor" : "none"} className="drop-shadow-lg" />
+            <Bookmark size={28} fill={saved ? "currentColor" : "none"} className="drop-shadow-lg group-hover:scale-110 transition-transform" />
           </Button>
         </div>
 
         {/* Like count */}
-        {likeData && likeData.likeCount > 0 && (
-          <p className="font-semibold text-white mb-3 text-lg">
-            {likeData.likeCount.toLocaleString()} {likeData.likeCount === 1 ? "like" : "likes"}
+        {likeCount > 0 && (
+          <p className="font-semibold text-white mb-3 text-lg hover:text-purple-300 cursor-pointer transition-colors">
+            {likeCount.toLocaleString()} {likeCount === 1 ? "like" : "likes"}
           </p>
         )}
 
@@ -161,22 +191,33 @@ export default function PostCard({ post }: PostCardProps) {
           <div className="text-gray-100 mb-3 leading-relaxed">
             <Link
               to={`/profile/${post.authorId}`}
-              className="font-semibold text-white hover:text-purple-300 mr-2"
+              className="font-semibold text-white hover:text-purple-300 mr-2 transition-colors"
             >
               {post.authorUsername}
             </Link>
-            <span>{post.caption}</span>
+            <span className="whitespace-pre-wrap">{post.caption}</span>
           </div>
         )}
 
         {/* View comments button */}
+        {commentCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowComments(!showComments)}
+            className="text-gray-400 hover:text-gray-200 p-0 h-auto font-normal mb-2 transition-colors"
+          >
+            View all {commentCount} comments
+          </Button>
+        )}
+        
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowComments(!showComments)}
-          className="text-gray-400 hover:text-gray-200 p-0 h-auto font-normal"
+          className="text-gray-400 hover:text-gray-200 p-0 h-auto font-normal transition-colors"
         >
-          {showComments ? "Hide comments" : "View all comments"}
+          {showComments ? "Hide comments" : "Add a comment..."}
         </Button>
       </div>
 

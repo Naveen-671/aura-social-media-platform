@@ -8,6 +8,7 @@ import ExplorePage from "../pages/ExplorePage";
 import ProfilePage from "../pages/ProfilePage";
 import PostPage from "../pages/PostPage";
 import NotificationsPage from "../pages/NotificationsPage";
+import ReelsPage from "../pages/ReelsPage";
 
 export default function AppInner() {
   const { user } = useUser();
@@ -30,6 +31,7 @@ export default function AppInner() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/reels" element={<ReelsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/post/:postId" element={<PostPage />} />
