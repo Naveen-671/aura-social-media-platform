@@ -1,0 +1,1 @@
+-- This migration is now empty since posts table will be created in the users database

@@ -1,0 +1,1 @@
+-- This migration is now empty since comments table will be created in the users database
