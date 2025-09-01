@@ -6,7 +6,14 @@ import { clerkPublishableKey } from "./config";
 import AuthPage from "./pages/AuthPage";
 import AppInner from "./components/AppInner";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds
+      retry: 1,
+    },
+  },
+});
 
 export default function App() {
   // Check if Clerk publishable key is properly configured
