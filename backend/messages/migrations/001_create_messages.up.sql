@@ -1,0 +1,1 @@
+-- This migration is now empty since messages tables will be created in the users database

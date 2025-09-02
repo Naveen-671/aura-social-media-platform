@@ -9,6 +9,7 @@ import ProfilePage from "../pages/ProfilePage";
 import PostPage from "../pages/PostPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import ReelsPage from "../pages/ReelsPage";
+import MessagesPage from "../pages/MessagesPage";
 
 export default function AppInner() {
   const { user } = useUser();
@@ -32,6 +33,7 @@ export default function AppInner() {
           <Route path="/" element={<HomePage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/reels" element={<ReelsPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/post/:postId" element={<PostPage />} />

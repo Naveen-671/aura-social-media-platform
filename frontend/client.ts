@@ -36,6 +36,7 @@ export class Client {
     public readonly comments: comments.ServiceClient
     public readonly follows: follows.ServiceClient
     public readonly likes: likes.ServiceClient
+    public readonly messages: messages.ServiceClient
     public readonly posts: posts.ServiceClient
     public readonly storage: storage.ServiceClient
     public readonly users: users.ServiceClient
@@ -56,6 +57,7 @@ export class Client {
         this.comments = new comments.ServiceClient(base)
         this.follows = new follows.ServiceClient(base)
         this.likes = new likes.ServiceClient(base)
+        this.messages = new messages.ServiceClient(base)
         this.posts = new posts.ServiceClient(base)
         this.storage = new storage.ServiceClient(base)
         this.users = new users.ServiceClient(base)
@@ -238,6 +240,94 @@ export namespace likes {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/likes/toggle`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_likes_toggle_toggleLike>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { listConversations as api_messages_list_conversations_listConversations } from "~backend/messages/list_conversations";
+import { listMessages as api_messages_list_messages_listMessages } from "~backend/messages/list_messages";
+import { liveMessages as api_messages_live_messages_liveMessages } from "~backend/messages/live_messages";
+import { markMessagesRead as api_messages_mark_read_markMessagesRead } from "~backend/messages/mark_read";
+import { sendMessage as api_messages_send_sendMessage } from "~backend/messages/send";
+import { typingIndicators as api_messages_typing_typingIndicators } from "~backend/messages/typing";
+
+export namespace messages {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.listConversations = this.listConversations.bind(this)
+            this.listMessages = this.listMessages.bind(this)
+            this.liveMessages = this.liveMessages.bind(this)
+            this.markMessagesRead = this.markMessagesRead.bind(this)
+            this.sendMessage = this.sendMessage.bind(this)
+            this.typingIndicators = this.typingIndicators.bind(this)
+        }
+
+        /**
+         * Lists all conversations for the current user.
+         */
+        public async listConversations(params: RequestType<typeof api_messages_list_conversations_listConversations>): Promise<ResponseType<typeof api_messages_list_conversations_listConversations>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:  params.limit === undefined ? undefined : String(params.limit),
+                offset: params.offset === undefined ? undefined : String(params.offset),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/messages/conversations`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_messages_list_conversations_listConversations>
+        }
+
+        /**
+         * Lists messages in a conversation with another user.
+         */
+        public async listMessages(params: RequestType<typeof api_messages_list_messages_listMessages>): Promise<ResponseType<typeof api_messages_list_messages_listMessages>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:  params.limit === undefined ? undefined : String(params.limit),
+                offset: params.offset === undefined ? undefined : String(params.offset),
+                userId: params.userId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/messages`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_messages_list_messages_listMessages>
+        }
+
+        /**
+         * Real-time message streaming for conversations.
+         */
+        public async liveMessages(): Promise<StreamInOut<StreamRequest<typeof api_messages_live_messages_liveMessages>, StreamResponse<typeof api_messages_live_messages_liveMessages>>> {
+            return await this.baseClient.createStreamInOut(`/messages/live`)
+        }
+
+        /**
+         * Marks all messages from a user as read.
+         */
+        public async markMessagesRead(params: RequestType<typeof api_messages_mark_read_markMessagesRead>): Promise<void> {
+            await this.baseClient.callTypedAPI(`/messages/mark-read`, {method: "POST", body: JSON.stringify(params)})
+        }
+
+        /**
+         * Sends a message to another user.
+         */
+        public async sendMessage(params: RequestType<typeof api_messages_send_sendMessage>): Promise<ResponseType<typeof api_messages_send_sendMessage>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/messages`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_messages_send_sendMessage>
+        }
+
+        /**
+         * Real-time typing indicators for conversations.
+         */
+        public async typingIndicators(): Promise<StreamInOut<StreamRequest<typeof api_messages_typing_typingIndicators>, StreamResponse<typeof api_messages_typing_typingIndicators>>> {
+            return await this.baseClient.createStreamInOut(`/messages/typing`)
         }
     }
 }

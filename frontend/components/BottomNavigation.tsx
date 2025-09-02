@@ -1,14 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Home, Search, PlusSquare, Heart, User, Play } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, Play, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CreatePostModal from "./CreatePostModal";
+import MessagesModal from "./MessagesModal";
 import { useState } from "react";
 
 export default function BottomNavigation() {
   const location = useLocation();
   const { user } = useUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMessagesModal, setShowMessagesModal] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -17,6 +19,7 @@ export default function BottomNavigation() {
     { path: "/explore", icon: Search, label: "Explore" },
     { path: null, icon: PlusSquare, label: "Create", action: () => setShowCreateModal(true) },
     { path: "/reels", icon: Play, label: "Reels" },
+    { path: null, icon: MessageCircle, label: "Messages", action: () => setShowMessagesModal(true) },
     { path: "/notifications", icon: Heart, label: "Notifications" },
     { path: `/profile/${user?.id}`, icon: User, label: "Profile" }
   ];
@@ -88,6 +91,11 @@ export default function BottomNavigation() {
       <CreatePostModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
+      />
+
+      <MessagesModal
+        open={showMessagesModal}
+        onOpenChange={setShowMessagesModal}
       />
     </>
   );
